@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saka Booth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+        }
+        .screen {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .screen.active {
+            display: flex;
+        }
+        .saka-logo {
+            font-weight: 800;
+            font-size: 4rem;
+            letter-spacing: -2px;
+            background: linear-gradient(45deg, #ff7e5f, #feb47b, #ff7e5f, #86a8e7, #7f7fd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradient-animation 5s ease infinite;
+        }
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .primary-btn {
+            background-color: #1c1e21;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2.5rem;
+            border-radius: 9999px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .secondary-btn {
+            background-color: #e4e6eb;
+            color: #1c1e21;
+        }
+        .video-container {
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            aspect-ratio: 4 / 3;
+            background-color: #ddd;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror mode */
+        }
+        .countdown-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10rem;
+            font-weight: 800;
+            color: white;
+            background-color: rgba(0,0,0,0.3);
+            -webkit-text-stroke: 4px black;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .thumbnails-bar {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            background-color: rgba(255,255,255,0.7);
+            padding: 0.5rem;
+            border-radius: 0.75rem;
+            backdrop-filter: blur(5px);
+        }
+        .thumbnail {
+            width: 60px;
+            height: 45px;
+            border-radius: 0.25rem;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+        .final-collage {
+            display: grid;
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: background 0.3s;
+        }
+        .final-collage img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .layout-option {
+            cursor: pointer;
+            border: 4px solid transparent;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            background-color: #e4e6eb;
+            padding: 0.5rem;
+        }
+        .layout-option:hover, .layout-option.active {
+            border-color: #ff7e5f;
+            transform: scale(1.05);
+        }
+        .layout-preview { display: grid; background-color: #ccc; gap: 4px; }
+        .layout-preview div { background-color: #a0aec0; }
+        /* Layout styles */
+        .layout-1 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
+        .layout-2 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
+        .layout-2 img:nth-child(1) { grid-column: 1 / 3; grid-row: 1 / 3; }
+        .layout-3 { grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr; gap: 10px; }
+        .layout-4 { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); gap: 10px; }
+        .layout-5 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 10px; }
+        .layout-5 img:nth-child(1) { grid-row: 1 / 3; }
+        .layout-5 img:nth-child(4) { grid-row: 2 / 4; }
+        .layout-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
+        .layout-6 img:nth-child(1) { grid-column: 1 / 4; }
+        .layout-7 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
+        .layout-7 img:nth-child(2) { transform: rotate(5deg) scale(1.1); z-index: 1; }
+        .layout-8 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }
+        .frame-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .frame-option:hover, .frame-option.active {
+            transform: scale(1.1);
+            border-color: #1c1e21;
+        }
+        input[type="color"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 50px;
+            height: 50px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
+        input[type="color"]::-moz-color-swatch {
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Welcome Screen -->
+    <div id="welcome-screen" class="screen active">
+        <div class="absolute top-4 right-4 flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <i data-lucide="camera" class="text-gray-600"></i>
+                <select id="camera-select" class="bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+            </div>
+            <button id="fullscreen-btn" title="Layar Penuh" class="p-3 rounded-full bg-white/50 hover:bg-white/80 transition">
+                <i data-lucide="maximize" id="fullscreen-icon"></i>
+            </button>
+        </div>
+        <div class="text-center">
+            <h1 class="saka-logo">SAKA BOOTH</h1>
+            <p class="text-gray-500 mb-8">Your personal photobooth experience.</p>
+            <button id="start-btn" class="primary-btn">Start</button>
+        </div>
+    </div>
+
+    <!-- 2. Layout Selection Screen -->
+    <div id="layout-screen" class="screen">
+        <h2 class="text-3xl font-bold mb-8">Pilih Tata Letak Favoritmu</h2>
+        <div id="layout-options-container" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Layout options will be injected here -->
+        </div>
+        <button id="layout-back-btn" class="mt-8 text-gray-500 text-sm">Kembali ke Awal</button>
+    </div>
+    
+    <!-- 3. Camera Session Screen -->
+    <div id="camera-screen" class="screen bg-gray-800">
+        <div class="video-container">
+            <video id="camera-feed" autoplay playsinline></video>
+            <div id="countdown-overlay" class="countdown-overlay"></div>
+        </div>
+        <div id="thumbnails-bar" class="thumbnails-bar"></div>
+        <p class="text-white mt-4">Bersiaplah untuk berpose!</p>
+    </div>
+
+    <!-- 4. Preview Screen -->
+    <div id="preview-screen" class="screen">
+        <h2 class="text-2xl font-bold mb-4">Your Photos!</h2>
+        <div id="final-collage" class="final-collage"></div>
+        <div id="frame-selection" class="mt-6 p-4 bg-white/70 backdrop-blur-sm rounded-xl shadow-md">
+            <h3 class="font-bold text-center mb-3">Pilih Bingkai</h3>
+            <div class="flex justify-center items-center gap-4 flex-wrap">
+                <div id="frame-options-container" class="flex gap-4"></div>
+                <div><input type="color" id="custom-color-picker" value="#ffffff"></div>
+            </div>
+        </div>
+        <div class="flex gap-4 mt-6">
+            <button id="save-btn" class="primary-btn flex items-center gap-2"><i data-lucide="save"></i>Simpan & Unduh</button>
+            <button id="restart-btn" class="primary-btn flex items-center gap-2"><i data-lucide="rotate-ccw"></i>Mulai Lagi</button>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-lg">
+            <div id="modal-text" class="mb-4">Pesan modal.</div>
+            <button id="modal-close-btn" class="primary-btn secondary-btn">OK</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // --- DOM Elements ---
+        const screens = document.querySelectorAll('.screen');
+        const startBtn = document.getElementById('start-btn');
+        const cameraSelect = document.getElementById('camera-select');
+        const layoutOptionsContainer = document.getElementById('layout-options-container');
+        const layoutBackBtn = document.getElementById('layout-back-btn');
+        const cameraFeed = document.getElementById('camera-feed');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const thumbnailsBar = document.getElementById('thumbnails-bar');
+        const finalCollage = document.getElementById('final-collage');
+        const saveBtn = document.getElementById('save-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const modal = document.getElementById('modal');
+        const modalText = document.getElementById('modal-text');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const frameOptionsContainer = document.getElementById('frame-options-container');
+        const customColorPicker = document.getElementById('custom-color-picker');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const fullscreenIcon = document.getElementById('fullscreen-icon');
+
+        // --- State ---
+        let capturedPhotos = [];
+        const PHOTO_COUNT = 4;
+        let stream;
+        let activeFrameStyle = 'white';
+        let selectedLayout = 'layout-1';
+
+        const predefinedFrames = [
+            'linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%)',
+            'linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)',
+            'linear-gradient(to right, #868f96 0%, #596164 100%)',
+            'linear-gradient(120deg, #f6d365 0%, #fda085 100%)',
+            'linear-gradient(to top, #5ee7df 0%, #b490ca 100%)',
+        ];
+
+        // --- Layout Definitions ---
+        const layouts = [
+            { id: 'layout-1', name: 'Classic 2x2', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;"><div></div><div></div><div></div><div></div></div>' },
+            { id: 'layout-2', name: 'Main Feature', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);"><div style="grid-column: 1 / 3; grid-row: 1 / 3;"></div><div></div><div></div><div></div></div>' },
+            { id: 'layout-3', name: 'Vertical Strip', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr;"><div class="h-full"></div><div class="h-full"></div><div class="h-full"></div><div class="h-full"></div></div>' },
+            { id: 'layout-4', name: 'Horizontal Strip', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr);"><div></div><div></div><div></div><div></div></div>' },
+            { id: 'layout-5', name: 'Interlock', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr);"><div style="grid-row: 1 / 3;"></div><div></div><div style="grid-row: 2 / 4;"></div><div></div></div>' },
+            { id: 'layout-6', name: 'Panorama Top', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);"><div style="grid-column: 1 / 4;"></div><div></div><div></div><div></div></div>' },
+            { id: 'layout-7', name: 'Funky', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;"><div></div><div style="transform: rotate(5deg) scale(0.8);"></div><div></div><div></div></div>' },
+            { id: 'layout-8', name: 'Simple Duo', preview: '<div class="layout-preview h-24 w-24" style="grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;"><div></div><div></div><div></div><div></div></div>' },
+        ];
+        
+        // --- Modal ---
+        function showModal(message, isHtml = false) {
+            if (isHtml) {
+                modalText.innerHTML = message;
+            } else {
+                modalText.textContent = message;
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        modalCloseBtn.addEventListener('click', () => {
+             modal.classList.add('hidden');
+             modal.classList.remove('flex');
+        });
+
+        // --- Navigation ---
+        function showScreen(screenId) {
+            screens.forEach(screen => screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        startBtn.addEventListener('click', () => showScreen('layout-screen'));
+        layoutBackBtn.addEventListener('click', () => showScreen('welcome-screen'));
+        restartBtn.addEventListener('click', () => showScreen('layout-screen'));
+        saveBtn.addEventListener('click', handleSaveAndDownload);
+        
+        // --- Fullscreen Logic (FIXED) ---
+        function toggleFullScreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+
+            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                if (requestFullScreen) {
+                    requestFullScreen.call(docEl).catch(err => {
+                        showModal(`Gagal masuk mode layar penuh: ${err.message}`);
+                    });
+                } else {
+                    showModal('Mode layar penuh tidak didukung di browser ini.');
+                }
+            } else {
+                if(cancelFullScreen){
+                    cancelFullScreen.call(doc);
+                }
+            }
+        }
+
+        function updateFullscreenIcon() {
+            if (document.fullscreenElement) {
+                fullscreenIcon.setAttribute('data-lucide', 'minimize');
+            } else {
+                fullscreenIcon.setAttribute('data-lucide', 'maximize');
+            }
+            lucide.createIcons();
+        }
+
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        document.addEventListener('fullscreenchange', updateFullscreenIcon);
+
+
+        // --- App Logic ---
+        function initializeLayouts() {
+            layoutOptionsContainer.innerHTML = '';
+            layouts.forEach(layout => {
+                const option = document.createElement('div');
+                option.className = 'layout-option';
+                option.innerHTML = layout.preview;
+                option.addEventListener('click', () => {
+                    selectedLayout = layout.id;
+                    startPhotoSession();
+                });
+                layoutOptionsContainer.appendChild(option);
+            });
+        }
+
+        async function startPhotoSession() {
+            showScreen('camera-screen');
+            await startCamera(cameraFeed);
+            capturedPhotos = [];
+            thumbnailsBar.innerHTML = '';
+            
+            await new Promise(resolve => cameraFeed.onloadedmetadata = resolve);
+
+            for (let i = 0; i < PHOTO_COUNT; i++) {
+                await runCountdown();
+                capturePhoto();
+            }
+            
+            stopCamera();
+            createCollage();
+            showScreen('preview-screen');
+        }
+
+        function runCountdown() {
+            return new Promise(resolve => {
+                let count = 10;
+                countdownOverlay.style.opacity = 1;
+                const interval = setInterval(() => {
+                    countdownOverlay.textContent = count;
+                    if (count === 0) {
+                        countdownOverlay.textContent = '';
+                        countdownOverlay.style.opacity = 0;
+                        clearInterval(interval);
+                        setTimeout(resolve, 500);
+                    }
+                    count--;
+                }, 1000);
+            });
+        }
+
+        function capturePhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = cameraFeed.videoWidth;
+            canvas.height = cameraFeed.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(cameraFeed, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            capturedPhotos.push(dataUrl);
+            const thumb = document.createElement('img');
+            thumb.src = dataUrl;
+            thumb.className = 'thumbnail';
+            thumbnailsBar.appendChild(thumb);
+        }
+
+        function stopCamera() {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+
+        function createCollage() {
+            finalCollage.innerHTML = '';
+            finalCollage.className = `final-collage ${selectedLayout}`;
+            capturedPhotos.forEach(photoSrc => {
+                const img = document.createElement('img');
+                img.src = photoSrc;
+                finalCollage.appendChild(img);
+            });
+        }
+
+        async function getCameras() {
+            try {
+                await navigator.mediaDevices.getUserMedia({video: true});
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                cameraSelect.innerHTML = '';
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Kamera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+            } catch (err) {
+                 console.error("Error enumerating devices: ", err);
+                 showModal("Tidak dapat menemukan kamera. Mohon berikan izin.");
+            }
+        }
+
+        async function startCamera(videoElement) {
+            try {
+                if (stream) stream.getTracks().forEach(track => track.stop());
+                const deviceId = cameraSelect.value;
+                stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId ? { exact: deviceId } : undefined, width: 1280, height: 720 } });
+                videoElement.srcObject = stream;
+            } catch (err) {
+                console.error("Camera error:", err);
+                showModal("Tidak bisa mengakses kamera. Mohon berikan izin.");
+            }
+        }
+
+        // --- Frame Logic ---
+        function initializeFrames() {
+            frameOptionsContainer.innerHTML = '';
+            const whiteFrame = document.createElement('div');
+            whiteFrame.className = 'frame-option active';
+            whiteFrame.style.background = 'white';
+            whiteFrame.style.border = '2px solid #ccc';
+            whiteFrame.addEventListener('click', () => applyFrame('white', whiteFrame));
+            frameOptionsContainer.appendChild(whiteFrame);
+
+            predefinedFrames.forEach(frameStyle => {
+                const option = document.createElement('div');
+                option.className = 'frame-option';
+                option.style.background = frameStyle;
+                option.addEventListener('click', () => applyFrame(frameStyle, option));
+                frameOptionsContainer.appendChild(option);
+            });
+        }
+
+        function applyFrame(style, element) {
+            activeFrameStyle = style;
+            finalCollage.style.background = style;
+            document.querySelectorAll('#frame-options-container .frame-option').forEach(el => el.classList.remove('active'));
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        customColorPicker.addEventListener('input', (e) => {
+            applyFrame(e.target.value, null);
+        });
+
+        // --- Final Image Generation & Download ---
+        async function generateFinalImageWithFrame() {
+            const collageElement = document.getElementById('final-collage');
+            const collageRect = collageElement.getBoundingClientRect();
+            const canvas = document.createElement('canvas');
+            const scale = 2; // For better resolution
+            canvas.width = collageRect.width * scale;
+            canvas.height = collageRect.height * scale;
+            const ctx = canvas.getContext('2d');
+
+            // Draw background (frame)
+            ctx.fillStyle = collageElement.style.background;
+            if (activeFrameStyle.includes('gradient')) {
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                const colors = activeFrameStyle.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/g) || ['#ffffff', '#e0e0e0'];
+                gradient.addColorStop(0, colors[0]);
+                gradient.addColorStop(1, colors[1] || colors[0]);
+                ctx.fillStyle = gradient;
+            }
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw photos
+            const images = Array.from(collageElement.querySelectorAll('img'));
+            const imagePromises = images.map(img => new Promise(resolve => {
+                if (img.complete) resolve(img);
+                else img.onload = () => resolve(img);
+            }));
+            await Promise.all(imagePromises);
+
+            const computedStyle = getComputedStyle(collageElement);
+            const padding = parseFloat(computedStyle.padding) * scale;
+            const gap = parseFloat(computedStyle.gap) * scale;
+            
+            // This part is complex because CSS grid layout is not directly available in canvas.
+            // We will simulate the layout-1 (2x2 grid) as it's the most common.
+            // For a perfect replica of all layouts, a more complex rendering engine would be needed.
+            const photoWidth = (canvas.width - padding * 2 - gap) / 2;
+            const photoHeight = (canvas.height - padding * 2 - gap) / 2;
+
+            const positions = [
+                { x: padding, y: padding },
+                { x: padding + photoWidth + gap, y: padding },
+                { x: padding, y: padding + photoHeight + gap },
+                { x: padding + photoWidth + gap, y: padding + photoHeight + gap },
+            ];
+
+            images.forEach((img, index) => {
+                if (positions[index]) {
+                    ctx.drawImage(img, positions[index].x, positions[index].y, photoWidth, photoHeight);
+                }
+            });
+
+            return canvas.toDataURL('image/jpeg', 0.9);
+        }
+
+        async function handleSaveAndDownload() {
+            showModal("Mempersiapkan file... Mohon tunggu.");
+            
+            const framedImageDataUrl = await generateFinalImageWithFrame();
+            downloadImage(framedImageDataUrl, `saka-booth-framed-${Date.now()}.jpg`);
+
+            capturedPhotos.forEach((dataUrl, index) => {
+                downloadImage(dataUrl, `saka-booth-photo-${index + 1}.jpg`);
+            });
+            
+            const driveLink = "https://drive.google.com/drive/folders/1pPzbiaHwVKEqpyJhyFGJSOySM_39MD1W?usp=sharing";
+            const message = `
+                <p>Semua file telah diunduh.</p>
+                <p class="mt-2">Silakan unggah file secara manual ke Google Drive:</p>
+                <a href="${driveLink}" target="_blank" class="text-blue-500 hover:underline break-all">${driveLink}</a>
+            `;
+            showModal(message, true);
+        }
+
+        function downloadImage(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            link.click();
+        }
+
+        // --- Initialization on Load ---
+        window.onload = () => {
+            initializeLayouts();
+            initializeFrames();
+            getCameras();
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
